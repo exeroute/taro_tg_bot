@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import sys
-from os import getenv
 
 from aiogram import Bot, Dispatcher, html
 from aiogram.client.default import DefaultBotProperties
@@ -9,6 +8,8 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message
 import cfg
+from db import Database
+db = Database('manager.db')
 
 TOKEN = cfg.TOKEN
 dp = Dispatcher()
@@ -16,6 +17,8 @@ dp = Dispatcher()
 
 @dp.message(CommandStart())
 async def command_start_handler(message: Message):
+    if not db.user_exists(message.chat.id):
+        db.add_user(message.chat.id, message.chat.username)
     await message.answer(f"Привет, {html.bold(message.from_user.full_name)}."
                          f"\nДобро пожаловать в бот FAST-TARO."
                          f"\n"
@@ -38,11 +41,12 @@ async def command_about(message: Message):
                          "\n5. После проверки оплаты, баланс будет пополнен и вы сможете оформить заказ")
 
 @dp.message(Command('balance'))
-async def command_about(message: Message):
+async def command_balance(message: Message):
+    for row in db.get_rubles():
+        rub = row[0]
     await message.answer("Ваш баланс:"
-                         "\n"
-                         "\nхххх рублей - хватает на х заказов"
-                         "\nхxx баллов - начисляется 30% баллами от суммы каждого пополнения")
+                        "\n\n" +str(rub)+ " рублей - хватает на х заказов"
+                        "\nхxx баллов - начисляется 30% баллами от суммы каждого пополнения")
 
 @dp.message(Command('taro'))
 async def command_about(message: Message):
